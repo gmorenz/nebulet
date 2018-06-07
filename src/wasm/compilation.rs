@@ -246,6 +246,8 @@ impl<'isa> Compiler<'isa> {
             unsafe {
                 ctx.emit_to_memory(self.isa, (region_start + offset) as *mut u8, &mut reloc_sink, &mut NullTrapSink {});
             }
+            println!("Something emitted at {:x}", region_start + offset);
+
             functions.push(FunctionType::Local {
                 offset,
                 size: *size,

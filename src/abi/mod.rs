@@ -14,3 +14,5 @@ pub mod rand;
 pub mod intrinsics;
 /// ABIs for I/O
 pub mod io;
+/// ABIs for kernel guts
+pub mod kernel;

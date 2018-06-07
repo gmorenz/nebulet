@@ -34,6 +34,22 @@ abi_map! {
         returns: VOID,
         abi::io::print,
     },
+    read_port_u8: {
+        params: [I32],
+        returns: I32,
+        abi::io::read_port_u8,
+    },
+    write_port_u8: {
+        params: [I32, I32],
+        returns: VOID,
+        abi::io::write_port_u8,
+    },
+    // Kernel
+    set_idt_handler: {
+        params: [I32, I32],
+        returns: VOID,
+        abi::kernel::set_idt_handler,
+    },
 }
 
 abi_map! {

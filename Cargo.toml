@@ -118,3 +118,4 @@ features = ["core"]
 
 [replace]
 "hashmap_core:0.1.5" = { git = "https://github.com/lachlansneff/hashmap_core" }
+"x86_64:0.2.0-alpha-019" = { git = "https://github.com/rust-osdev/x86_64" }

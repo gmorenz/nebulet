@@ -84,11 +84,16 @@ pub fn kmain() -> ! {
 
     use object::{ThreadRef, ProcessRef, CodeRef};
 
-    let code = include_bytes!("../userspace/target/wasm32-unknown-unknown/release/hello.wasm");
+    let keyboard_src = include_bytes!("../userspace/target/wasm32-unknown-unknown/release/keyboard.wasm");
+    let src = include_bytes!("../userspace/target/wasm32-unknown-unknown/release/hello.wasm");
+
+    let keyboard_code = CodeRef::compile(keyboard_src).unwrap();
+    let keyboard_process = ProcessRef::create(keyboard_code).unwrap();
+    keyboard_process.start().unwrap();
 
     let thread = ThreadRef::new(1024 * 1024, move || {
         // TODO: Hardcoded path is only rebuilt when we build for release mode.
-        let code = CodeRef::compile(code)
+        let code = CodeRef::compile(src)
             .unwrap();
         for _ in 0..1 {
             let process = ProcessRef::create(code.clone())
