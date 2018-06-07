@@ -21,5 +21,12 @@ pub unsafe extern "sysv64" fn handler() {
 pub fn main() {
     print("Initializing keyboard.");
     unsafe{ set_idt_handler(33, handler) };
+
+    // This is necessary. Otherwise (possibly amongst other things) the backing
+    // store for the vmctx pointer is dropped, and calls to handler will start
+    // using freed memory.
+
+    // Long term we probably want some form of "thread suspend" mechanism
+    // that we can use here.
     loop {}
 }

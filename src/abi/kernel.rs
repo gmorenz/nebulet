@@ -1,5 +1,6 @@
 #![allow(warnings)]
 
+use core::ptr;
 use nebulet_derive::nebulet_abi;
 use object::ProcessRef;
 use x86_64::structures::idt::ExceptionStackFrame;
@@ -9,17 +10,16 @@ use arch::idt;
 use wasm::instance::{VmCtx, get_function_addr};
 
 
-type Handler = unsafe extern "sysv64" fn();
+type Handler = unsafe extern "sysv64" fn(*const VmCtx);
 
 /// This has a "side effect" of enabling interrupts... ugh.
-#[nebulet_abi]
-pub fn set_idt_handler(index: u32, handler: u32, process: &ProcessRef) {
+pub fn set_idt_handler(index: u32, handler: u32, vmctx: &VmCtx) {
     use core::mem::transmute;
     let index = index as u8;
 
     println!("handler: {}", handler);
 
-    let handler = match process.code().lookup_func(handler as usize) {
+    let handler = match vmctx.process.code().lookup_func(handler as usize) {
         Ok(x) => x,
         Err(_) => {
             println!("Invalid function ref in set_idt_handler");
@@ -32,17 +32,17 @@ pub fn set_idt_handler(index: u32, handler: u32, process: &ProcessRef) {
 
         println!("Registering handler 0x{:x}", handler as usize);
 
-        IDT_REDIRECTION_TABLE[index as usize] = handler;
+        IDT_REDIRECTION_TABLE[index as usize] = (handler, vmctx);
         let handler = IDT_HANDLER[index as usize];
         let mut guard = idt::IdtGuard::new();
         guard[index as usize].set_handler_fn(handler);
     }
 }
 
-unsafe extern "sysv64" fn null_fn() {
+unsafe extern "sysv64" fn null_fn(_: *const VmCtx) {
     println!("null fn");
 }
-static mut IDT_REDIRECTION_TABLE: [Handler; 256] = [null_fn; 256];
+static mut IDT_REDIRECTION_TABLE: [(Handler, *const VmCtx); 256] = [(null_fn, ptr::null()); 256];
 
 macro_rules! idt_handlers {
     ($($name:ident ( $value:expr) ),*) => {
@@ -50,7 +50,8 @@ macro_rules! idt_handlers {
                 extern "x86-interrupt" fn $name(_: &mut ExceptionStackFrame) {
                     println!("Interrupt: {}", $value);
                     unsafe {
-                        IDT_REDIRECTION_TABLE[$value]()
+                        let entry = IDT_REDIRECTION_TABLE[$value];
+                        entry.0(entry.1);
                     }
                 }
                 $name
